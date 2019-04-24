@@ -24,7 +24,12 @@ image_dict = {"buildings": [comparison_raster_path_building, groundtruth_raster_
 
 
 def normalize(img):
-#    maxi = img.max()
+    """
+    Converts an image into binary form (1 when class is present)
+    Input: img array
+    Output: binary img array
+    """
+
     mini = img.min()
     
     # Set negatives to 0
@@ -38,7 +43,12 @@ def normalize(img):
 
 
 def calc_iou(groundtruth, comparison):
-
+    """
+    Calculates the Intersection over Union (Jacard Index) of two raster images
+    Inputs: groundtruth raster image, comparison raster image
+    Outputs: Binarized ground truth image, binarized comparison image, IoU score
+    """
+        
     gt = imread(groundtruth, as_gray=True)
     cp = imread(comparison, as_gray=True)
     
@@ -58,6 +68,13 @@ def calc_iou(groundtruth, comparison):
 
     
 def raw_matrix(image_dictionary):
+    """
+    Calculates the pixel-wise True Positives, True Negatives, False Positives, False Negatives of two raster images
+    Input: Dictionary of classes, e.g.
+                image_dict = {"buildings": [comparison_raster_path_building, groundtruth_raster_path_building],
+                              "roads": [comparison_raster_path_road, groundtruth_raster_path_road]}
+    Output: Dataframe
+    """    
     
     tp = []
     fp = []
@@ -99,6 +116,12 @@ def raw_matrix(image_dictionary):
     return results     
 
 def accuracy_metrics(raw):
+    """
+    Adds Recall, Precision and F1 scroes to the raw_matrix above
+    Input: raw_matrix
+    Output: same, with extra columns for Recall, Precision and F1
+    """
+    
     raw['Recall'] = raw['True Positives'] / (raw['True Positives'] + raw['False Negatives'])
     raw['Precision'] = raw['True Positives'] / (raw['True Positives'] + raw['False Positives'])
     raw['F1'] = 2 * (raw['Precision'] * raw['Recall']) / (raw['Precision'] + raw['Recall'])
