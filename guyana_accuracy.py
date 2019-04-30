@@ -27,7 +27,7 @@ from accuracy_helpers import normalize, calc_averages, clip, accuracy_metrics
 class GuyanaTile:
     STRIDE = 200
     SIZE = 400
-    NORM = 0
+    NORM = 3
     def __init__(self, code, class_):
         self.__code = code
         self.__class = class_
@@ -41,45 +41,51 @@ class GuyanaTile:
     def read_groundtruth_raster(self):
         raster_path = self.get_raster_path()
         raster = imread(raster_path)
-        raster = self.norm_image(raster)
+        if GuyanaTile.NORM != 0:
+            raster = self.norm_image(raster,margin=GuyanaTile.STRIDE)
+        else:   
+            raster = self.norm_image(raster,margin=0)
         return raster
     
     def get_classified_folder(self, appendage='HACK_IRG1'):
         TILE_DIR = os.path.join(self.__classified_dir, "{}_{}".format(self.__code, appendage))
         return TILE_DIR
     
-    def get_classified_raster_path(self, appendage='HACK_IRG1', extras='', norm=NORM):
+    def get_classified_raster_path(self, appendage='HACK_IRG1', extras=''):
+        
         TILE_DIR = self.get_classified_folder(appendage=appendage)
         OUTPUT_DIR = os.path.join(TILE_DIR, '{}_masks{}'.format(self.__class, str(extras)))
-        raster_path = os.path.join(OUTPUT_DIR, '{}_normalized_{}.tif'.format(self.__code, str(norm)))
+        raster_path = os.path.join(OUTPUT_DIR, '{}_normalized_{}.tif'.format(self.__code, str(GuyanaTile.NORM)))
         return raster_path
     
     def calc_limits(self,raster):
         h,w = raster.shape
-        w = STRIDE*int(w/STRIDE)
-        h = STRIDE*int(h/STRIDE)
+        w = GuyanaTile.STRIDE*int(w/GuyanaTile.STRIDE)
+        h = GuyanaTile.STRIDE*int(h/GuyanaTile.STRIDE)
         return h,w
         
         
-    def norm_image(self,img):
+    def norm_image(self,img,margin):
         im_height, im_width = self.calc_limits(img)
-        h0 = STRIDE
-        h1 = im_height - STRIDE
-        w0 = STRIDE
-        w1 = im_width - STRIDE
-        if h0>0 and w0>0 and h1>h0 and w1>w0:
+        h0 = margin
+        h1 = im_height - margin
+        w0 = margin
+        w1 = im_width - margin
+        if h0>=0 and w0>=0 and h1>h0 and w1>w0:
             img = img[h0:h1,w0:w1]
         else:
-            print("raster data too small to clip.  Setting to zero")
-            img = raster[0:0,0:0]
+            print("raster data too small to clip.  Setting to zero({0}:{1}, {2}:{3}".format(h0,h1,w0,w1))
+            img = img[0:0,0:0]
         return img
         
         
-    def read_classified_raster(self, appendage='HACK_IRG1', extras='', norm=NORM):
-        raster_path = self.get_classified_raster_path(appendage=appendage, extras=extras, norm=norm)
+    def read_classified_raster(self, appendage='HACK_IRG1', extras=''):
+        raster_path = self.get_classified_raster_path(appendage=appendage, extras=extras)
         raster = imread(raster_path)
-        if norm != 0:
-            raster = self.norm_image(raster)
+        if GuyanaTile.NORM != 0:
+            raster = self.norm_image(raster,margin=GuyanaTile.STRIDE)
+        else:   
+            raster = self.norm_image(raster,margin=0)
             
         return raster
     
