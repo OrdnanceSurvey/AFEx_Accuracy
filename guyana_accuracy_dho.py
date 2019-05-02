@@ -122,9 +122,7 @@ class GuyanaTile:
                                 "True Negatives": tn,
                                 "False Negatives": fn})   
     
-        accuracy = accuracy_metrics(results)
-#        print(accuracy)
-        
+        accuracy = accuracy_metrics(results)        
         return accuracy
     
 def main():

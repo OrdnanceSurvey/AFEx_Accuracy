@@ -22,8 +22,8 @@ from accuracy_helpers import normalize, calc_averages, clip, accuracy_metrics
 
 class GuyanaTile:
     STRIDE = 200
-    SIZE = 800
-    NORM = 1
+    SIZE = 400
+    NORM = 0
     def __init__(self, code, class_):
         self.__code = code
         self.__class = class_
@@ -55,10 +55,10 @@ class GuyanaTile:
         return raster_path
     
     def calc_limits(self,raster):
-        h,w = raster.shape
-        w = GuyanaTile.STRIDE*int(w/GuyanaTile.STRIDE)
-        h = GuyanaTile.STRIDE*int(h/GuyanaTile.STRIDE)
-        return h,w
+        h, w = raster.shape
+        w = GuyanaTile.STRIDE * int(w / GuyanaTile.STRIDE)
+        h = GuyanaTile.STRIDE * int(h / GuyanaTile.STRIDE)
+        return h, w
               
     def norm_image(self, img, margin):
         im_height, im_width = self.calc_limits(img)
@@ -66,25 +66,26 @@ class GuyanaTile:
         h1 = im_height - margin
         w0 = margin
         w1 = im_width - margin
-        if h0>=0 and w0>=0 and h1>h0 and w1>w0:
-            img = img[h0:h1,w0:w1]
+        if h0 >= 0 and w0 >= 0 and h1 > h0 and w1 > w0:
+            img = img[h0: h1, w0: w1]
         else:
             print("raster data too small to clip.  Setting to zero({0}:{1}, {2}:{3}".format(h0,h1,w0,w1))
-            img = img[0:0,0:0]
+            img = img[0: 0, 0: 0]
         return img
            
-    def read_classified_raster(self, appendage='HACK_IRG1', extras=''):
+    def read_classified_raster(self, appendage='HACK_IRG1', extras='', crop=False):
         raster_path = self.get_classified_raster_path(appendage=appendage, extras=extras)
         raster = imread(raster_path)
-        if GuyanaTile.NORM != 0:
-            raster = self.norm_image(raster,margin=GuyanaTile.STRIDE)
-        else:   
-            raster = self.norm_image(raster,margin=0)
-            
+        if crop:
+            raster = raster[GuyanaTile.STRIDE: -GuyanaTile.STRIDE, GuyanaTile.STRIDE: -GuyanaTile.STRIDE]
+#        if GuyanaTile.NORM != 0:
+#            raster = self.norm_image(raster, margin=GuyanaTile.STRIDE)
+#        else:   
+#            raster = self.norm_image(raster, margin=0)           
         return raster
     
         
-    def calc_stats(self, appendage='HACK_IRG1',extras=''):
+    def calc_stats(self, crop=False, appendage='HACK_IRG1',extras=''):
         
         # TODO: add total number of buildings present vs total number found
     
@@ -94,7 +95,7 @@ class GuyanaTile:
         fn = []
         
         gt = self.read_groundtruth_raster()
-        cf = self.read_classified_raster(appendage=appendage, extras=extras)
+        cf = self.read_classified_raster(appendage=appendage, extras=extras, crop=crop)
         
         gt_norm = normalize(gt)
         cf_norm = normalize(cf)
@@ -137,15 +138,16 @@ def main():
 
 #    GT9999 should be 100%
     testTiles = ['GT2031', 'GT1033', 'GT1014']
-    appendage = 'HACK_RGB800'
+#    testTiles = ['GT2031']
+    appendage = 'HACK_RGB400_PADDED'
     class_ = 'buildings'
-#    extras = '_epoch100'
-    extras = ''
+    extras = '_jason_epoch_100_08'
+#    extras = ''
     frames = []
     for region in testTiles:
         print("Calculating Stats for: \t {}".format(region))
         tile = GuyanaTile(region, class_)
-        tileAcc = tile.calc_stats(appendage=appendage, extras=extras)
+        tileAcc = tile.calc_stats(crop=True, appendage=appendage, extras=extras)
         frames.append(tileAcc)
     
     result = pd.concat(frames)
